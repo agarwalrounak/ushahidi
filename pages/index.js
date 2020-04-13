@@ -3,6 +3,7 @@ import gql from 'graphql-tag'
 import Link from 'next/link'
 import { useQuery } from '@apollo/react-hooks'
 import { useRouter } from 'next/router'
+import React from "react";
 
 const ViewerQuery = gql`
   query ViewerQuery {
@@ -28,14 +29,25 @@ const Index = () => {
   if (data && data.viewer) {
     return (
       <div>
-        You're signed in as {data.viewer.email} goto{' '}
-        <Link href="/about">
-          <a>static</a>
-        </Link>{' '}
-        page. or{' '}
-        <Link href="/signout">
-          <a>signout</a>
-        </Link>
+          <p>
+              You're signed in as {data.viewer.email}.
+          </p>
+          <p>
+              Go to your{' '}
+              <Link href="/blog">
+                  <a>blog</a>
+              </Link>
+          </p>
+          <p>
+              Go to{' '}
+              <Link href="/about">
+                  <a>static</a>
+              </Link>{' '}
+              page or{' '}
+              <Link href="/signout">
+                  <a>signout</a>
+              </Link>
+          </p>
       </div>
     )
   }
