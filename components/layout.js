@@ -1,5 +1,5 @@
-import Head from 'next/head'
-import Header from './header'
+import Head from 'next/head';
+import Header from './header';
 import React from "react";
 
 function Layout({data, loading = false, children}) {

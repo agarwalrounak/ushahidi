@@ -6,6 +6,7 @@ import { useMutation, useApolloClient } from '@apollo/react-hooks'
 import Field from '../components/field'
 import { getErrorMessage } from '../lib/form'
 import { useRouter } from 'next/router'
+import Layout from "../components/layout";
 
 const SignInMutation = gql`
     mutation SignInMutation($email: String!, $password: String!) {
@@ -47,7 +48,7 @@ function SignIn() {
     }
 
     return (
-        <>
+        <Layout>
             <h1>Sign In</h1>
             <form onSubmit={handleSubmit}>
                 {errorMsg && <p>{errorMsg}</p>}
@@ -70,7 +71,7 @@ function SignIn() {
                     <a>Sign up</a>
                 </Link>
             </form>
-        </>
+        </Layout>
     )
 }
 

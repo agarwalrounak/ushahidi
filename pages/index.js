@@ -25,36 +25,68 @@ const Index = () => {
         data.viewer === null &&
         typeof window !== 'undefined'
     ) {
-        router.push('/signin')
+        router.push('/signin');
     }
 
-    if (data && data.viewer) {
-        return (
-            <div>
-                <p>
-                    You're signed in as {data.viewer.email}.
-                </p>
-                <p>
-                    Go to your{' '}
-                    <Link href="/blog">
-                        <a>blog</a>
-                    </Link>
-                </p>
-                <p>
-                    Go to{' '}
-                    <Link href="/about">
-                        <a>static</a>
-                    </Link>{' '}
-                    page or{' '}
-                    <Link href="/signout">
-                        <a>signout</a>
-                    </Link>
-                </p>
-            </div>
-        )
-    }
+    return (
+        <Layout data={data} loading={loading}>
+            {data && data.viewer ? (
+                <div>
+                    <p>
+                        You're signed in as {data.viewer.email}.
+                    </p>
+                    <p>
+                        Go to your{' '}
+                        <Link href="/blog">
+                            <a>blog</a>
+                        </Link>
+                    </p>
+                    <p>
+                        Go to{' '}
+                        <Link href="/about">
+                            <a>static</a>
+                        </Link>{' '}
+                        page or{' '}
+                        <Link href="/signout">
+                            <a>signout</a>
+                        </Link>
+                    </p>
+                </div>
+            ) : (
+                <p>Loading...</p>
+            )}
+        </Layout>
+    )
 
-    return <p>Loading...</p>
+
+
+    // if (data && data.viewer) {
+    //     return (
+    //         <div>
+    //             <p>
+    //                 You're signed in as {data.viewer.email}.
+    //             </p>
+    //             <p>
+    //                 Go to your{' '}
+    //                 <Link href="/blog">
+    //                     <a>blog</a>
+    //                 </Link>
+    //             </p>
+    //             <p>
+    //                 Go to{' '}
+    //                 <Link href="/about">
+    //                     <a>static</a>
+    //                 </Link>{' '}
+    //                 page or{' '}
+    //                 <Link href="/signout">
+    //                     <a>signout</a>
+    //                 </Link>
+    //             </p>
+    //         </div>
+    //     )
+    // }
+    //
+    // return <p>Loading...</p>
 };
 
 export default withApollo(Index)
