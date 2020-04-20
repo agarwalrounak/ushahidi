@@ -1,4 +1,9 @@
+import { withApollo } from '../apollo/client'
+import gql from 'graphql-tag'
+import { useQuery } from '@apollo/react-hooks'
+import { useRouter } from 'next/router'
 import React from 'react'
+
 import {
     Editor,
     EditorState,
@@ -7,9 +12,36 @@ import {
     convertFromRaw,
 } from 'draft-js'
 
-export default class Blog extends React.Component {
+import Layout from "../components/layout";
+
+const ViewerQuery = gql`
+    query ViewerQuery {
+        viewer {
+            id
+            email
+        }
+    }
+`;
+
+function withMyHook(Component) {
+    return function WrappedComponent(props) {
+        const router = useRouter();
+        const { data, loading } = useQuery(ViewerQuery);
+
+        if (
+            loading === false &&
+            data.viewer === null &&
+            typeof window !== 'undefined'
+        ) {
+            router.push('/signin');
+        }
+        return <Component {...props} data={data} loading={loading} />;
+    }
+}
+
+class Blog extends React.Component {
     constructor(props) {
-        super(props)
+        super(props);
         this.state = {
             editorState: EditorState.createWithContent(convertFromRaw(initialData)),
             showToolbar: false,
@@ -31,21 +63,21 @@ export default class Blog extends React.Component {
                 y: 0,
             },
             showRawData: false,
-        }
+        };
 
-        this.focus = () => this.editor.focus()
+        this.focus = () => this.editor.focus();
         this.onChange = editorState => this.setState({ editorState })
     }
 
     onClickEditor = () => {
-        this.focus()
+        this.focus();
         this.checkSelectedText()
-    }
+    };
 
     // 1- Check if some text is selected
     checkSelectedText = () => {
         if (typeof window !== 'undefined') {
-            const text = window.getSelection().toString()
+            const text = window.getSelection().toString();
             if (text !== '') {
                 // 1-a Define the selection coordinates
                 this.setSelectionXY()
@@ -56,15 +88,15 @@ export default class Blog extends React.Component {
                 })
             }
         }
-    }
+    };
 
     // 2- Identify the selection coordinates
     setSelectionXY = () => {
         var r = window
             .getSelection()
             .getRangeAt(0)
-            .getBoundingClientRect()
-        var relative = document.body.parentNode.getBoundingClientRect()
+            .getBoundingClientRect();
+        var relative = document.body.parentNode.getBoundingClientRect();
         // 2-a Set the selection coordinates in the state
         this.setState(
             {
@@ -77,7 +109,7 @@ export default class Blog extends React.Component {
             },
             () => this.showToolbar()
         )
-    }
+    };
 
     // 3- Show the toolbar
     showToolbar = () => {
@@ -87,7 +119,7 @@ export default class Blog extends React.Component {
             },
             () => this.measureToolbar()
         )
-    }
+    };
 
     // 4- The toolbar was hidden until now
     measureToolbar = () => {
@@ -101,36 +133,36 @@ export default class Blog extends React.Component {
             },
             () => this.setToolbarXY()
         )
-    }
+    };
 
     // 5- Now that we have all measures, define toolbar coordinates
     setToolbarXY = () => {
-        let coordinates = {}
+        let coordinates = {};
 
         const {
             selectionMeasures,
             selectionCoordinates,
             toolbarMeasures,
             windowWidth,
-        } = this.state
+        } = this.state;
 
-        const hiddenTop = selectionCoordinates.y < toolbarMeasures.h
+        const hiddenTop = selectionCoordinates.y < toolbarMeasures.h;
         const hiddenRight =
-            windowWidth - selectionCoordinates.x < toolbarMeasures.w / 2
-        const hiddenLeft = selectionCoordinates.x < toolbarMeasures.w / 2
+            windowWidth - selectionCoordinates.x < toolbarMeasures.w / 2;
+        const hiddenLeft = selectionCoordinates.x < toolbarMeasures.w / 2;
 
         const normalX =
-            selectionCoordinates.x - toolbarMeasures.w / 2 + selectionMeasures.w / 2
-        const normalY = selectionCoordinates.y - toolbarMeasures.h
+            selectionCoordinates.x - toolbarMeasures.w / 2 + selectionMeasures.w / 2;
+        const normalY = selectionCoordinates.y - toolbarMeasures.h;
 
-        const invertedY = selectionCoordinates.y + selectionMeasures.h
-        const moveXToLeft = windowWidth - toolbarMeasures.w
-        const moveXToRight = 0
+        const invertedY = selectionCoordinates.y + selectionMeasures.h;
+        const moveXToLeft = windowWidth - toolbarMeasures.w;
+        const moveXToRight = 0;
 
         coordinates = {
             x: normalX,
             y: normalY,
-        }
+        };
 
         if (hiddenTop) {
             coordinates.y = invertedY
@@ -147,26 +179,26 @@ export default class Blog extends React.Component {
         this.setState({
             toolbarCoordinates: coordinates,
         })
-    }
+    };
 
     handleKeyCommand = command => {
-        const { editorState } = this.state
-        const newState = RichUtils.handleKeyCommand(editorState, command)
+        const { editorState } = this.state;
+        const newState = RichUtils.handleKeyCommand(editorState, command);
         if (newState) {
-            this.onChange(newState)
+            this.onChange(newState);
             return true
         }
         return false
-    }
+    };
 
     toggleToolbar = inlineStyle => {
         this.onChange(
             RichUtils.toggleInlineStyle(this.state.editorState, inlineStyle)
         )
-    }
+    };
 
     render() {
-        const { editorState } = this.state
+        const { editorState } = this.state;
         // Make sure we're not on the ssr
         if (typeof window !== 'undefined') {
             // Let's stick the toolbar to the selection
@@ -183,48 +215,56 @@ export default class Blog extends React.Component {
             top: this.state.toolbarCoordinates.y,
             zIndex: 999,
             padding: 10,
-        }
+        };
         return (
-            <div>
-                <div
-                    ref={elem => {
-                        this.elemWidth = elem ? elem.clientWidth : 0
-                        this.elemHeight = elem ? elem.clientHeight : 0
-                    }}
-                    style={toolbarStyle}
-                >
-                    <ToolBar editorState={editorState} onToggle={this.toggleToolbar} />
-                </div>
-                <div onClick={this.onClickEditor} onBlur={this.checkSelectedText}>
-                    <Editor
-                        customStyleMap={styleMap}
-                        editorState={editorState}
-                        handleKeyCommand={this.handleKeyCommand}
-                        onChange={this.onChange}
-                        placeholder="Tell a story..."
-                        editorKey="ushahidi"
-                        spellCheck={false}
-                        ref={element => {
-                            this.editor = element
-                        }}
-                    />
-                </div>
-                <div style={{ marginTop: 40 }}>
-                    <button
-                        onClick={() =>
-                            this.setState({ showRawData: !this.state.showRawData })
-                        }
-                    >
-                        {!this.state.showRawData ? 'Show' : 'Hide'} Raw Data
-                    </button>
-                    <br />
-                    {this.state.showRawData &&
-                    JSON.stringify(convertToRaw(editorState.getCurrentContent()))}
-                </div>
-            </div>
+            <Layout data={this.props.data} loading={this.props.loading}>
+                {this.props.data && this.props.data.viewer ? (
+                    <div>
+                        <div
+                            ref={elem => {
+                                this.elemWidth = elem ? elem.clientWidth : 0;
+                                this.elemHeight = elem ? elem.clientHeight : 0
+                            }}
+                            style={toolbarStyle}
+                        >
+                            <ToolBar editorState={editorState} onToggle={this.toggleToolbar} />
+                        </div>
+                        <div onClick={this.onClickEditor} onBlur={this.checkSelectedText}>
+                            <Editor
+                                customStyleMap={styleMap}
+                                editorState={editorState}
+                                handleKeyCommand={this.handleKeyCommand}
+                                onChange={this.onChange}
+                                placeholder="Tell a story..."
+                                editorKey="ushahidi"
+                                spellCheck={false}
+                                ref={element => {
+                                    this.editor = element
+                                }}
+                            />
+                        </div>
+                        <div style={{ marginTop: 40 }}>
+                            <button
+                                onClick={() =>
+                                    this.setState({ showRawData: !this.state.showRawData })
+                                }
+                            >
+                                {!this.state.showRawData ? 'Show' : 'Hide'} Raw Data
+                            </button>
+                            <br />
+                            {this.state.showRawData &&
+                            JSON.stringify(convertToRaw(editorState.getCurrentContent()))}
+                        </div>
+                    </div>
+                ) : (
+                    <p>Loading...</p>
+                )}
+            </Layout>
         )
     }
 }
+
+export default withApollo(withMyHook(Blog));
 
 // Custom overrides for each style
 const styleMap = {
@@ -241,13 +281,13 @@ const styleMap = {
     ANYCUSTOMSTYLE: {
         color: '#00e400',
     },
-}
+};
 
 class ToolbarButton extends React.Component {
     constructor() {
-        super()
+        super();
         this.onToggle = e => {
-            e.preventDefault()
+            e.preventDefault();
             this.props.onToggle(this.props.style)
         }
     }
@@ -255,7 +295,7 @@ class ToolbarButton extends React.Component {
     render() {
         const buttonStyle = {
             padding: 10,
-        }
+        };
         return (
             <span onMouseDown={this.onToggle} style={buttonStyle}>
         {this.props.label}
@@ -270,10 +310,10 @@ var toolbarItems = [
     { label: 'Underline', style: 'UNDERLINE' },
     { label: 'Code', style: 'CODE' },
     { label: 'Surprise', style: 'ANYCUSTOMSTYLE' },
-]
+];
 
 const ToolBar = props => {
-    var currentStyle = props.editorState.getCurrentInlineStyle()
+    var currentStyle = props.editorState.getCurrentInlineStyle();
     return (
         <div>
             {toolbarItems.map(toolbarItem => (
@@ -287,7 +327,7 @@ const ToolBar = props => {
             ))}
         </div>
     )
-}
+};
 
 const initialData = {
     blocks: [
@@ -347,4 +387,4 @@ const initialData = {
         },
     ],
     entityMap: {},
-}
+};
