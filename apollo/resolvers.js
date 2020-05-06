@@ -5,9 +5,11 @@ import getConfig from 'next/config';
 import bcrypt from 'bcrypt';
 import v4 from 'uuid/v4';
 
+const User = require("../models/User");
+
 const JWT_SECRET = getConfig().serverRuntimeConfig.JWT_SECRET;
 
-const users = [];
+// const users = [];
 
 function createUser(data) {
     const salt = bcrypt.genSaltSync();
@@ -20,7 +22,7 @@ function createUser(data) {
 }
 
 function validPassword(user, password) {
-    return bcrypt.compareSync(password, user.hashedPassword)
+    return bcrypt.compareSync(password, user.password)
 }
 
 export const resolvers = {
@@ -31,7 +33,14 @@ export const resolvers = {
                 try {
                     const {id, email} = jwt.verify(token, JWT_SECRET);
 
-                    return users.find(user => user.id === id && user.email === email)
+                    const user = await User.query().findOne({
+                        'id': id,
+                        'email': email
+                    });
+                    console.log("viewer", user);
+
+                    // return users.find(user => user.id === id && user.email === email);
+                    return user;
                 } catch {
                     throw new AuthenticationError(
                         'Authentication token is invalid, please log in'
@@ -43,14 +52,30 @@ export const resolvers = {
     Mutation: {
         async signUp(_parent, args, _context, _info) {
             const user = createUser(args.input);
+            console.log("signUp", user);
+            // users.push(user);
 
-            users.push(user);
-
+            try {
+                await User.query().insert({
+                    id: user.id,
+                    email: user.email,
+                    password: user.hashedPassword
+                });
+                console.log("signUp", {user});
+            } catch(err) {
+                console.log(err);
+                throw err;
+            }
             return {user}
         },
 
         async signIn(_parent, args, context, _info) {
-            const user = users.find(user => user.email === args.input.email);
+            // const user = users.find(user => user.email === args.input.email);
+
+            const user = await User.query().findOne('email', args.input.email);
+            console.log("signIn", user);
+
+            // const user= await User.query().select('email', 'password').where('email', args.input.email);
 
             if (user && validPassword(user, args.input.password)) {
                 const token = jwt.sign(

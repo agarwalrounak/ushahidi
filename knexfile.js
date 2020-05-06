@@ -11,6 +11,12 @@ module.exports = {
             database: credentials.database,
             user: credentials.user,
             password: credentials.password
+        },
+        migrations: {
+            directory: "./database/migrations"
+        },
+        seeds: {
+            directory: "./database/seeds"
         }
     }
 
